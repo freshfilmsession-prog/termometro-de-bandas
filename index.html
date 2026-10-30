@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Volumen Político en directo</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Barlow+Condensed:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#09070a;--panel:#150f12;--line:#33262b;--bone:#ece5d6;--ash:#9a8d93;--blood:#d4141c;--ember:#ff5a1f;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--bone);font:500 1.15rem/1.4 "Barlow Condensed","Arial Narrow",sans-serif;min-height:100vh;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+body::after{content:"";position:fixed;left:50%;top:-30vh;width:120vw;height:70vh;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(212,20,28,.28),transparent);pointer-events:none}
+main{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:28px 18px 60px}
+h1{font:400 clamp(2.6rem,12vw,5.5rem)/.88 Anton,Impact,sans-serif;margin:0 0 6px;text-transform:uppercase;text-shadow:4px 3px 0 var(--blood)}
+.sub{color:var(--ash);margin:0 0 20px}
+.h2{font:400 1.05rem Anton,Impact,sans-serif;color:var(--ash);letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+details{border:1px solid var(--line);background:var(--panel);padding:12px 14px;margin-bottom:18px}
+summary{cursor:pointer;font:400 1.15rem Anton,Impact,sans-serif;text-transform:uppercase}
+label{display:block;margin-top:12px;color:var(--ash)}
+input[type=text],input[type=password]{width:100%;background:transparent;border:1px solid var(--line);color:var(--bone);font:500 1.1rem "Barlow Condensed",sans-serif;padding:8px 10px;margin-top:4px}
+input:focus{outline:2px solid var(--ember)}
+code{background:#241a1e;padding:1px 6px;word-break:break-all}
+.btn{border:0;background:var(--blood);color:var(--bone);font:400 1.2rem Anton,Impact,sans-serif;letter-spacing:.04em;padding:10px 18px;cursor:pointer;text-transform:uppercase;margin:14px 8px 0 0}
+.btn.alt{background:transparent;border:1px solid var(--line);color:var(--ash);font-size:1rem}
+.btn:hover{background:var(--ember);color:var(--bone)}
+.msg{color:var(--ash);margin:10px 0}
+.now{display:flex;gap:14px;align-items:center;border:1px solid var(--line);border-left:6px solid var(--blood);background:var(--panel);padding:12px}
+.now img{width:76px;height:76px;object-fit:cover;background:#241a1e}
+.now b{font:400 1.7rem/1.05 Anton,Impact,sans-serif;text-transform:uppercase;display:block;overflow-wrap:anywhere}
+.card{margin-top:18px;background:var(--panel);border:1px solid var(--line);padding:20px 18px}
+.big{font:400 clamp(2rem,9vw,3.4rem)/1 Anton,Impact,sans-serif;text-transform:uppercase}
+.tbar{position:relative;height:22px;margin:26px 0 10px;background:linear-gradient(90deg,#d4141c,#6d6167 50%,#2f6fe0)}
+.needle{position:absolute;top:-10px;width:8px;height:42px;margin-left:-4px;background:var(--bone);box-shadow:0 0 0 3px var(--bg);transition:left .8s cubic-bezier(.2,.9,.3,1)}
+.tlab{display:flex;justify-content:space-between;align-items:baseline;color:var(--ash)}
+.tlab b{font:400 1.5rem Anton,Impact,sans-serif;color:var(--bone);text-transform:uppercase}
+.alert{margin:0 0 14px;padding:12px 14px;background:rgba(255,90,31,.14);border:2px solid var(--ember);display:flex;flex-direction:column;gap:4px}
+.alert b{font:400 1.3rem Anton,Impact,sans-serif;color:var(--ember);text-transform:uppercase}
+ul{margin:8px 0 0;padding:0;list-style:none}
+li{padding:7px 0 7px 18px;border-top:1px solid var(--line);position:relative}
+li::before{content:"";position:absolute;left:0;top:1.05em;width:8px;height:8px;background:var(--blood)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--bone);padding:4px 12px;font:600 1.05rem "Barlow Condensed",sans-serif;cursor:pointer}
+.chip:hover{border-color:var(--ember)}
+.note{color:var(--ash);font-size:1rem;border-top:1px solid var(--line);margin-top:16px;padding-top:10px}
+.pulse{animation:p 1s ease-in-out infinite alternate}
+@keyframes p{to{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}.needle{transition:none}}
+</style>
+</head>
+<body>
+<main>
+<h1>Volumen político</h1>
+<p class="sub">En directo: lo que suena en tu Spotify y de qué lado está.</p>
+
+<details id="cfg">
+<summary>Configuración</summary>
+<label>Client ID de tu app de Spotify
+<input type="text" id="cid" autocomplete="off" placeholder="p. ej. 3f1c…"></label>
+<p class="msg">En developer.spotify.com crea una app y añade esta Redirect URI exacta: <code id="redir"></code></p>
+<label>Clave de la API de Anthropic (opcional, para analizar bandas nuevas)
+<input type="password" id="akey" autocomplete="off" placeholder="sk-ant-…"></label>
+<label><input type="checkbox" id="web" checked> Usar búsqueda web en el análisis (más preciso, algo más caro)</label>
+<button class="btn" id="save">Guardar</button>
+<button class="btn alt" id="out">Cerrar sesión de Spotify</button>
+<p class="msg">Los datos se guardan solo en este navegador. La clave de Anthropic queda en el navegador: úsala solo en tus dispositivos.</p>
+</details>
+
+<button class="btn" id="login" style="margin-top:0">Conectar con Spotify</button>
+<p class="msg" id="st"></p>
+<div id="now"></div>
+<div id="res"></div>
+<div id="hist" hidden><p class="h2" style="margin-top:22px">Lo último que ha sonado</p><div class="chips" id="hl"></div></div>
+</main>
+<script>
+(function(){
+"use strict";
+var $=function(s){return document.querySelector(s)};
+var REDIR=location.origin+location.pathname;
+function LS(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function SS(k,v){try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){}}
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function norm(s){return s.trim().toLowerCase()}
+function axis(e){return e<=-8?"Extrema izquierda":e<=-4?"Izquierda":e<=-1?"Centroizquierda":e===0?"Centro":e<=3?"Centroderecha":e<=7?"Derecha":"Extrema derecha"}
+function status(t){$("#st").textContent=t}
+
+var SEED={"crim":{banda:"Crim",nivel:6,eje:-6,alerta:"ninguna",alerta_detalle:"",confianza:"media",resumen:"Banda de punk rock de Tarragona que cantó en catalán. Sus letras hacen crítica social (vivienda, involución social) y apoyaron la libertad de expresión en los casos de Valtònyc y Hasél. Rechazan ser portavoces de un movimiento.",evidencias:["Concierto de apoyo a Valtònyc en Mallorca, según el grupo (RockZone).","Letras críticas con la vivienda y la involución social (RockZone)."],matiz:"Lo encontrado respalda una postura crítica y de izquierdas, no ultraizquierda."}};
+var cache={},hist=[];
+try{cache=JSON.parse(LS("vp_cache")||"{}");hist=JSON.parse(LS("vp_hist")||"[]")}catch(e){}
+
+/* ---- configuración ---- */
+$("#redir").textContent=REDIR;
+$("#cid").value=LS("vp_cid")||"";$("#akey").value=LS("vp_key")||"";$("#web").checked=LS("vp_web")!=="0";
+if(!LS("vp_cid"))$("#cfg").open=true;
+$("#save").onclick=function(){SS("vp_cid",$("#cid").value.trim());SS("vp_key",$("#akey").value.trim()||null);SS("vp_web",$("#web").checked?"1":"0");status("Guardado.")};
+$("#out").onclick=function(){["vp_at","vp_rt","vp_exp"].forEach(function(k){SS(k,null)});location.reload()};
+
+/* ---- login Spotify (PKCE, sin secreto) ---- */
+function rnd(n){var a=new Uint8Array(n);crypto.getRandomValues(a);return Array.from(a,function(b){return("0"+b.toString(16)).slice(-2)}).join("")}
+function b64(buf){return btoa(String.fromCharCode.apply(null,new Uint8Array(buf))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"")}
+$("#login").onclick=async function(){
+var cid=$("#cid").value.trim();if(!cid){$("#cfg").open=true;status("Pega primero tu Client ID.");return}
+SS("vp_cid",cid);var v=rnd(48);SS("vp_v",v);
+var ch=b64(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v)));
+location.href="https://accounts.spotify.com/authorize?"+new URLSearchParams({client_id:cid,response_type:"code",redirect_uri:REDIR,scope:"user-read-currently-playing user-read-playback-state",code_challenge_method:"S256",code_challenge:ch})};
+async function tok(body){
+var r=await fetch("https://accounts.spotify.com/api/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams(body)});
+var j=await r.json();if(!r.ok)throw new Error(j.error_description||j.error||"Error de Spotify");
+SS("vp_at",j.access_token);SS("vp_exp",String(Date.now()+j.expires_in*1000-30000));if(j.refresh_token)SS("vp_rt",j.refresh_token)}
+async function access(){
+if(LS("vp_at")&&Date.now()<Number(LS("vp_exp")||0))return LS("vp_at");
+var rt=LS("vp_rt");if(!rt)return null;
+await tok({grant_type:"refresh_token",refresh_token:rt,client_id:LS("vp_cid")});return LS("vp_at")}
+
+/* ---- análisis ---- */
+function prompt_(a,song,web){return 'Eres un analista musical riguroso con conocimiento amplio de escenas locales. Indica el posicionamiento político público del artista «'+a+'» (canción que suena: «'+song+'»). '+(web?'Usa la búsqueda web si no la conoces bien o para comprobar datos recientes. ':'')+'Responde SOLO con un objeto JSON: {"banda":"nombre","existe":true,"nivel":0,"eje":0,"alerta":"ninguna","alerta_detalle":"","resumen":"2 frases","posturas":["máx 4"],"evidencias":["hechos concretos con año si lo sabes, máx 4"],"matiz":"1 frase o vacío","confianza":"alta|media|baja"}. nivel (0-10): 0 = evita posicionarse; 10 = su música y activismo son explícitamente políticos. eje (-10 a 10, o null si no tiene posición política identificable): -10 extrema izquierda, 0 centro, 10 extrema derecha, según sus posturas reales y no su estilo musical. alerta: "extrema_derecha" o "extrema_izquierda" SOLO con evidencia documentada y concreta de vínculos con movimientos extremistas, símbolos o discurso de odio; mismo criterio para ambos extremos; una polémica puntual o una postura conservadora o progresista normal NO la activa; si no, "ninguna". Sé neutral, no inventes datos ni citas; si no estás seguro, confianza baja o existe:false. En español.'}
+async function ask(a,song){
+var key=LS("vp_key");if(!key)return null;
+var web=LS("vp_web")!=="0";
+var body={model:"claude-sonnet-4-6",max_tokens:1800,messages:[{role:"user",content:prompt_(a,song,web)}]};
+if(web)body.tools=[{type:"web_search_20250305",name:"web_search",max_uses:3}];
+var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify(body)});
+var j=await r.json();if(!r.ok)throw new Error((j.error&&j.error.message)||"Error de la API");
+var t=(j.content||[]).filter(function(b){return b.type==="text"}).map(function(b){return b.text}).join("");
+var m=t.match(/\{[\s\S]*\}/);if(!m)throw new Error("Respuesta sin formato");
+return JSON.parse(m[0])}
+
+/* ---- pintar ---- */
+function renderNow(it){var n=$("#now");n.innerHTML="";var d=el("div","now");
+var img=it.album&&it.album.images&&it.album.images[0];if(img){var i=el("img");i.src=img.url;i.alt="";d.appendChild(i)}
+var w=el("div");w.appendChild(el("b",null,it.artists.map(function(a){return a.name}).join(", ")));w.appendChild(el("span",null,it.name));d.appendChild(w);n.appendChild(d)}
+function show(a,d){
+var o=$("#res");o.innerHTML="";var c=el("div","card");
+if(!d){c.appendChild(el("p","msg","Sin ficha de «"+a+"». Añade tu clave de Anthropic en Configuración para analizarla."));o.appendChild(c);return}
+if(d.existe===false){c.appendChild(el("p","msg","No conozco bien a «"+a+"». Confianza insuficiente para valorar."));o.appendChild(c);return}
+var AL={extrema_derecha:"extrema derecha",extrema_izquierda:"extrema izquierda"};
+if(AL[d.alerta]){var al=el("div","alert");al.appendChild(el("b",null,"⚠ Alerta: vínculos documentados con la "+AL[d.alerta]));if(d.alerta_detalle)al.appendChild(el("span",null,d.alerta_detalle));c.appendChild(al)}
+c.appendChild(el("div","big",d.banda||a));
+if(typeof d.eje==="number"){var e=Math.max(-10,Math.min(10,Math.round(d.eje)));var tb=el("div","tbar");var nd=el("i","needle");nd.style.left="50%";tb.appendChild(nd);c.appendChild(tb);
+var tl=el("div","tlab");tl.appendChild(el("span",null,"Izquierda"));tl.appendChild(el("b",null,axis(e)));tl.appendChild(el("span",null,"Derecha"));c.appendChild(tl);
+setTimeout(function(){nd.style.left=((e+10)/20*100)+"%"},60)}else c.appendChild(el("p","msg","Sin posición clara en el eje izquierda–derecha."));
+if(typeof d.nivel==="number")c.appendChild(el("p",null,"Volumen político: "+Math.round(d.nivel)+" / 10 · confianza "+(d.confianza||"media")));
+if(d.resumen)c.appendChild(el("p",null,d.resumen));
+if(d.evidencias&&d.evidencias.length){var u=el("ul");d.evidencias.forEach(function(x){u.appendChild(el("li",null,x))});c.appendChild(u)}
+if(d.matiz)c.appendChild(el("p",null,d.matiz));
+c.appendChild(el("div","note","Estimación basada en fuentes públicas y en el análisis de Claude. Contrasta antes de sacar conclusiones."));
+o.appendChild(c)}
+function renderHist(){var h=$("#hl");h.innerHTML="";$("#hist").hidden=!hist.length;
+hist.forEach(function(x){var d=cache[norm(x)]||SEED[norm(x)];var tag=d&&AL2(d.alerta)?"⚠ ":"";var b=el("button","chip",tag+x+(d&&typeof d.eje==="number"?" · "+axis(Math.round(d.eje)):""));b.onclick=function(){show(x,d)};h.appendChild(b)})}
+function AL2(a){return a==="extrema_derecha"||a==="extrema_izquierda"}
+
+/* ---- bucle ---- */
+var lastId="",busy=false;
+async function poll(){
+if(busy)return;
+try{
+var t=await access();if(!t){status("Sin sesión: pulsa «Conectar con Spotify».");return}
+var r=await fetch("https://api.spotify.com/v1/me/player/currently-playing",{headers:{Authorization:"Bearer "+t}});
+if(r.status===204){status("No suena nada ahora mismo.");return}
+if(r.status===401){SS("vp_exp","0");return}
+if(r.status===403){status("Spotify rechazó el permiso. Si la app está en modo desarrollo, añade tu correo en User Management.");return}
+if(!r.ok){status("Spotify respondió "+r.status+".");return}
+var d=await r.json();
+if(!d.item||d.currently_playing_type!=="track"){status("Ahora no suena una canción (anuncio o podcast).");return}
+status("");
+var id=d.item.id||d.item.name;if(id===lastId)return;lastId=id;
+renderNow(d.item);
+var a=d.item.artists[0].name,k=norm(a);
+var f=SEED[k]||cache[k];
+if(!f&&LS("vp_key")){busy=true;var c=el("div","card");c.appendChild(el("p","msg pulse","Analizando a "+a+"…"));$("#res").innerHTML="";$("#res").appendChild(c);
+try{f=await ask(a,d.item.name);if(f&&f.existe!==false){cache[k]=f;SS("vp_cache",JSON.stringify(cache))}}catch(e){busy=false;$("#res").innerHTML="";$("#res").appendChild(el("p","msg","No se pudo analizar: "+e.message));return}busy=false}
+show(a,f);
+hist=[a].concat(hist.filter(function(x){return norm(x)!==k})).slice(0,12);SS("vp_hist",JSON.stringify(hist));renderHist()
+}catch(e){busy=false;status("Error: "+e.message)}}
+
+async function init(){
+var p=new URLSearchParams(location.search);
+if(p.get("code")){try{await tok({grant_type:"authorization_code",code:p.get("code"),redirect_uri:REDIR,client_id:LS("vp_cid"),code_verifier:LS("vp_v")})}catch(e){status("No se pudo iniciar sesión: "+e.message)}history.replaceState(null,"",REDIR)}
+else if(p.get("error")){status("Spotify canceló el acceso.");history.replaceState(null,"",REDIR)}
+renderHist();poll();setInterval(function(){if(!document.hidden)poll()},5000)}
+init();
+})();
+</script>
+</body>
+</html>
